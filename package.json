@@ -1,0 +1,55 @@
+{
+  "name": "autoprint",
+  "version": "1.0.0",
+  "description": "Electron-based auto print service with web interface",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --enable-logging",
+    "build": "electron-builder --win nsis --x64",
+    "build:installer": "electron-builder --win nsis --x64"
+  },
+  "keywords": [
+    "electron",
+    "print",
+    "pdf"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^41.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.1.1",
+    "pdf-to-printer": "^5.7.0"
+  },
+  "build": {
+    "appId": "com.autoprint.app",
+    "productName": "AutoPrint",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!node_modules/.cache/**"
+    ],
+    "extraResources": [
+      {
+        "from": "public",
+        "to": "public",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "AutoPrint-Setup-${version}.exe"
+    }
+  }
+}

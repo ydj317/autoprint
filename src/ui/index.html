@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:*;">
+  <title>AutoPrint</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .info-value {
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: #e8f5e9;
+      border-radius: 6px;
+      color: #2e7d32;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #4caf50;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .ip-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ip-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+
+    .ip-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ip-interface {
+      font-size: 11px;
+      color: #999;
+    }
+
+    .ip-address {
+      font-family: monospace;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .url-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .url-row:last-child {
+      border-bottom: none;
+    }
+
+    .url-value {
+      font-family: monospace;
+      background: #e3f2fd;
+      padding: 4px 8px;
+      border-radius: 4px;
+      color: #1976d2;
+      font-size: 13px;
+      flex: 1;
+      margin-right: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #1976d2;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .copy-btn:hover {
+      background: #e3f2fd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AutoPrint</h1>
+
+    <div class="card">
+      <div class="card-title">서버 상태</div>
+      <div class="status">
+        <div class="status-dot"></div>
+        <span>실행 중</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">IP 주소</div>
+      <div class="ip-list" id="ip-list">-</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">접속 URL</div>
+      <div id="url-list">-</div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

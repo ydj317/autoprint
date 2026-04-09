@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoPrint - 웹 인쇄</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      color: white;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.8);
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .upload-zone {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+
+    .upload-zone:hover {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+
+    .upload-zone.dragover {
+      border-color: #667eea;
+      background: #f0f3ff;
+    }
+
+    .upload-zone.has-file {
+      border-color: #4caf50;
+      background: #f1f8f1;
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      color: #ccc;
+      margin-bottom: 12px;
+    }
+
+    .upload-text {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .file-name {
+      color: #333;
+      font-weight: 500;
+      margin-top: 8px;
+    }
+
+    .options-section {
+      margin-bottom: 20px;
+    }
+
+    .options-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .options-label {
+      font-size: 13px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    .options-toggle {
+      font-size: 12px;
+      color: #667eea;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    .options-toggle:hover {
+      text-decoration: underline;
+    }
+
+    .options-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 13px;
+      resize: vertical;
+      min-height: 80px;
+      background: #fafafa;
+    }
+
+    .options-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .options-hint {
+      font-size: 11px;
+      color: #999;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .options-hint pre {
+      background: #f5f5f5;
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 6px;
+      overflow-x: auto;
+    }
+
+    .print-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .print-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .print-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .message {
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 16px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .message.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .message.error {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AutoPrint</h1>
+    <p class="subtitle">PDF 파일을 업로드하면 즉시 인쇄됩니다</p>
+
+    <div class="card">
+      <form id="printForm">
+        <div class="upload-zone" id="uploadZone">
+          <div class="upload-icon">📄</div>
+          <div class="upload-text">클릭하거나 PDF 파일을 여기에 드래그하세요</div>
+          <div class="file-name" id="fileName"></div>
+        </div>
+        <input type="file" id="fileInput" accept=".pdf,application/pdf">
+
+        <div class="options-section">
+          <div class="options-header">
+            <span class="options-label">인쇄 옵션 (JSON, 선택사항)</span>
+            <button type="button" class="options-toggle" id="optionsToggle">도움말 보기</button>
+          </div>
+          <textarea class="options-input" id="optionsInput">{"printer": "HP Laser 1003-1008"}</textarea>
+          <div class="options-hint" id="optionsHint" style="display: none;">
+            로딩 중...
+          </div>
+        </div>
+
+        <button type="submit" class="print-btn" id="printBtn" disabled>인쇄</button>
+      </form>
+
+      <div id="message" class="message" style="display: none;"></div>
+    </div>
+  </div>
+
+  <script>
+    var selectedFile = null;
+    var printerInfo = {};
+
+    var uploadZone = document.getElementById('uploadZone');
+    var fileInput = document.getElementById('fileInput');
+    var fileName = document.getElementById('fileName');
+    var printBtn = document.getElementById('printBtn');
+    var printForm = document.getElementById('printForm');
+    var message = document.getElementById('message');
+    var optionsInput = document.getElementById('optionsInput');
+    var optionsToggle = document.getElementById('optionsToggle');
+    var optionsHint = document.getElementById('optionsHint');
+
+    // 페이지 로드 시 프린터 및 옵션 정보 가져오기
+    async function loadInfo() {
+      try {
+        var printerRes = await fetch('/api/printers');
+        printerInfo = await printerRes.json();
+
+        var optionsRes = await fetch('/api/options');
+        var optionsData = await optionsRes.json();
+
+        updateHint(printerInfo, optionsData.options);
+      } catch (e) {
+        console.error('Failed to load info:', e);
+        optionsHint.textContent = '정보를 불러오지 못했습니다';
+      }
+    }
+
+    function updateHint(printerData, defaultOptions) {
+      var printers = printerData.printers || [];
+      var defaultPrinter = printerData.defaultPrinter || '';
+
+      var hintHtml = '<strong>사용 가능한 프린터:</strong><br>';
+      if (printers.length > 0) {
+        printers.forEach(function(p) {
+          var isDefault = (p === defaultPrinter);
+          hintHtml += (isDefault ? '  * ' : '    ') + p + (isDefault ? ' (기본)' : '') + '<br>';
+        });
+      } else {
+        hintHtml += '  없음<br>';
+      }
+
+      hintHtml += '<br><strong>기본 옵션:</strong><pre>' + JSON.stringify(defaultOptions, null, 2) + '</pre>';
+      hintHtml += '<br><strong>예시:</strong><pre>{"printer": "' + (defaultPrinter || '프린터명') + '", "copies": 2}</pre>';
+
+      optionsHint.innerHTML = hintHtml;
+    }
+
+    optionsToggle.addEventListener('click', function() {
+      if (optionsHint.style.display === 'none') {
+        optionsHint.style.display = 'block';
+        optionsToggle.textContent = '도움말 숨기기';
+      } else {
+        optionsHint.style.display = 'none';
+        optionsToggle.textContent = '도움말 보기';
+      }
+    });
+
+    uploadZone.addEventListener('click', function() { fileInput.click(); });
+
+    uploadZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', function() {
+      uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+
+      var files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', function(e) {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+        showMessage('PDF 파일만 지원합니다', 'error');
+        return;
+      }
+
+      selectedFile = file;
+      fileName.textContent = file.name;
+      uploadZone.classList.add('has-file');
+      printBtn.disabled = false;
+      hideMessage();
+    }
+
+    printForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      if (!selectedFile) {
+        showMessage('파일을 선택해주세요', 'error');
+        return;
+      }
+
+      var formData = new FormData();
+      formData.append('file', selectedFile);
+
+      var optionsText = optionsInput.value.trim();
+      if (optionsText) {
+        try {
+          JSON.parse(optionsText);
+          formData.append('options', optionsText);
+        } catch (e) {
+          showMessage('옵션 JSON 형식이 올바르지 않습니다', 'error');
+          return;
+        }
+      }
+
+      printBtn.disabled = true;
+      printBtn.textContent = '인쇄 중...';
+
+      try {
+        var response = await fetch('/api/print', {
+          method: 'POST',
+          body: formData
+        });
+
+        var result = await response.json();
+
+        if (response.ok) {
+          showMessage('인쇄 요청이 완료되었습니다', 'success');
+        } else {
+          showMessage(result.error || '인쇄 실패', 'error');
+        }
+      } catch (error) {
+        showMessage('연결 오류: ' + error.message, 'error');
+      } finally {
+        printBtn.disabled = false;
+        printBtn.textContent = '인쇄';
+      }
+    });
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = 'message ' + type;
+      message.style.display = 'block';
+    }
+
+    function hideMessage() {
+      message.style.display = 'none';
+    }
+
+    // 초기화
+    loadInfo();
+  </script>
+</body>
+</html>
