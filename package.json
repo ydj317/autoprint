@@ -1,6 +1,6 @@
 {
   "name": "autoprint",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Electron-based auto print service with web interface",
   "main": "main.js",
   "scripts": {
@@ -44,12 +44,16 @@
       }
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "sign": false
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "AutoPrint-Setup-${version}.exe"
+      "artifactName": "AutoPrint-Setup-${version}.exe",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
     }
   }
 }
