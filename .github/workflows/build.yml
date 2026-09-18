@@ -1,0 +1,71 @@
+name: Build
+
+# 태그를 밀면 릴리스까지, 그 밖에는 빌드가 깨지지 않았는지만 확인한다.
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write      # 릴리스에 설치 파일을 올린다
+  id-token: write      # 빌드 출처 증명에 필요한 OIDC 토큰
+  attestations: write  # 빌드 출처 증명 기록
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build installer
+        env:
+          # 서명용 인증서가 저장소 시크릿에 있으면 electron-builder가 알아서 쓴다.
+          # 없으면 서명 없이 빌드된다. 로컬 인증서를 뒤지다 실패하지 않도록 꺼둔다.
+          CSC_LINK: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build
+
+      - name: Show build output
+        shell: bash
+        run: ls -lh dist/*.exe
+
+      # 이 파일이 이 저장소의 이 커밋에서 GitHub Actions로 만들어졌다는 증명을 남긴다.
+      # 코드 서명과는 별개이며, Windows SmartScreen 경고를 없애주지는 않는다.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: dist/AutoPrint-Setup-*.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoPrint-Setup
+          path: |
+            dist/AutoPrint-Setup-*.exe
+            dist/latest.yml
+          retention-days: 30
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/AutoPrint-Setup-*.exe
+            dist/AutoPrint-Setup-*.exe.blockmap
+            dist/latest.yml
+          generate_release_notes: true

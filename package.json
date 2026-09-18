@@ -17,13 +17,14 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^41.2.0",
-    "electron-builder": "^25.1.8"
+    "electron": "^44.4.1",
+    "electron-builder": "^26.15.3"
   },
   "dependencies": {
-    "express": "^5.1.0",
-    "multer": "^2.1.1",
-    "pdf-to-printer": "^5.7.0"
+    "express": "^5.2.1",
+    "multer": "^2.4.0",
+    "node-windows": "^1.0.0-beta.8",
+    "pdf-to-printer": "^5.8.1"
   },
   "build": {
     "appId": "com.autoprint.app",
@@ -36,24 +37,30 @@
       "!dist/**",
       "!node_modules/.cache/**"
     ],
+    "asar": false,
     "extraResources": [
       {
         "from": "public",
         "to": "public",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
       "target": "nsis",
-      "icon": "build/icon.ico",
-      "sign": false
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": true,
       "allowToChangeInstallationDirectory": true,
       "artifactName": "AutoPrint-Setup-${version}.exe",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico"
     }
+  },
+  "allowScripts": {
+    "electron@44.4.1": true
   }
 }

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoPrint - 웹 인쇄</title>
+  <title>AutoPrint</title>
+  <link rel="icon" href="/autoprint.png">
   <style>
     * {
       box-sizing: border-box;
@@ -12,15 +13,33 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic',
+                   'Microsoft YaHei', Roboto, sans-serif;
       padding: 20px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
     }
 
     .container {
-      max-width: 600px;
+      max-width: 680px;
       margin: 0 auto;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px;
+    }
+
+    .lang-select {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 5px 8px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.9);
+      color: #444;
+      cursor: pointer;
     }
 
     h1 {
@@ -31,7 +50,7 @@
     }
 
     .subtitle {
-      color: rgba(255,255,255,0.8);
+      color: rgba(255,255,255,0.85);
       text-align: center;
       margin-bottom: 24px;
       font-size: 14px;
@@ -45,87 +64,67 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
 
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 14px;
+    }
+
     .upload-zone {
       border: 2px dashed #ccc;
       border-radius: 8px;
       padding: 40px 20px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       margin-bottom: 20px;
     }
 
-    .upload-zone:hover {
+    .upload-zone:hover,
+    .upload-zone.dragover {
       border-color: #667eea;
       background: #f8f9ff;
     }
 
-    .upload-zone.dragover {
-      border-color: #667eea;
-      background: #f0f3ff;
-    }
-
     .upload-zone.has-file {
       border-color: #4caf50;
-      background: #f1f8f1;
+      background: #f1f8f2;
     }
 
-    .upload-icon {
-      font-size: 48px;
-      color: #ccc;
-      margin-bottom: 12px;
-    }
-
-    .upload-text {
-      color: #666;
-      font-size: 14px;
-    }
+    .upload-icon { font-size: 40px; margin-bottom: 8px; }
+    .upload-text { color: #666; font-size: 14px; }
 
     .file-name {
-      color: #333;
-      font-weight: 500;
       margin-top: 8px;
+      font-size: 13px;
+      color: #2e7d32;
+      font-weight: 500;
+      word-break: break-all;
     }
 
-    .options-section {
-      margin-bottom: 20px;
-    }
+    #fileInput { display: none; }
 
-    .options-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
+    .options-section { margin-bottom: 20px; }
 
     .options-label {
+      display: block;
       font-size: 13px;
       color: #555;
       font-weight: 500;
-    }
-
-    .options-toggle {
-      font-size: 12px;
-      color: #667eea;
-      cursor: pointer;
-      background: none;
-      border: none;
-    }
-
-    .options-toggle:hover {
-      text-decoration: underline;
+      margin-bottom: 6px;
     }
 
     .options-input {
       width: 100%;
-      padding: 12px;
+      min-height: 64px;
+      font-family: 'Consolas', 'Menlo', monospace;
+      font-size: 13px;
+      padding: 10px 12px;
       border: 1px solid #ddd;
       border-radius: 6px;
-      font-family: monospace;
-      font-size: 13px;
       resize: vertical;
-      min-height: 80px;
-      background: #fafafa;
+      color: #333;
     }
 
     .options-input:focus {
@@ -133,104 +132,269 @@
       border-color: #667eea;
     }
 
-    .options-hint {
-      font-size: 11px;
-      color: #999;
-      margin-top: 6px;
-      line-height: 1.5;
-    }
-
-    .options-hint pre {
-      background: #f5f5f5;
-      padding: 8px;
-      border-radius: 4px;
-      margin-top: 6px;
-      overflow-x: auto;
-    }
-
     .print-btn {
       width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 8px;
+      font-family: inherit;
       font-size: 16px;
       font-weight: 600;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: #667eea;
+      color: white;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .print-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
+    .print-btn:hover:not(:disabled) { background: #5568d3; }
 
     .print-btn:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+      opacity: 0.5;
+      cursor: default;
     }
 
     .message {
+      margin-top: 16px;
       padding: 12px;
       border-radius: 6px;
-      margin-top: 16px;
-      text-align: center;
       font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
     }
 
-    .message.success {
+    .message.success { background: #e8f5e9; color: #2e7d32; }
+    .message.error { background: #ffebee; color: #c62828; }
+
+    /* 프린터 목록 */
+    .printer-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .printer-item:last-child { border-bottom: none; }
+
+    .printer-info { min-width: 0; }
+
+    .printer-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      word-break: break-all;
+    }
+
+    .printer-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 7px;
+      border-radius: 10px;
       background: #e8f5e9;
       color: #2e7d32;
+      font-size: 11px;
+      font-weight: 600;
+      vertical-align: middle;
     }
 
-    .message.error {
-      background: #ffebee;
+    .printer-badge.blocked { background: #ffebee; color: #c62828; }
+
+    .printer-item.blocked .printer-name { color: #999; }
+
+    .printer-note {
+      margin-top: 4px;
+      font-size: 12px;
       color: #c62828;
+      line-height: 1.5;
     }
 
-    input[type="file"] {
-      display: none;
+    .use-btn:disabled {
+      border-color: #ddd;
+      color: #bbb;
+      cursor: default;
+    }
+
+    .printer-papers {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #999;
+      word-break: break-all;
+    }
+
+    .use-btn {
+      flex-shrink: 0;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 6px 12px;
+      border: 1px solid #667eea;
+      border-radius: 6px;
+      background: white;
+      color: #667eea;
+      cursor: pointer;
+    }
+
+    .use-btn:hover { background: #f0f2ff; }
+
+    .empty {
+      font-size: 14px;
+      color: #999;
+      padding: 8px 0;
+    }
+
+    /* 옵션 표 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 9px 8px;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+    }
+
+    th {
+      color: #666;
+      font-weight: 600;
+      font-size: 12px;
+      background: #fafafa;
+    }
+
+    td.opt-name {
+      font-family: 'Consolas', 'Menlo', monospace;
+      color: #c62828;
+      white-space: nowrap;
+    }
+
+    td.opt-values {
+      font-family: 'Consolas', 'Menlo', monospace;
+      color: #1565c0;
+      font-size: 12px;
+    }
+
+    pre {
+      background: #f6f8fa;
+      border: 1px solid #eaecef;
+      border-radius: 6px;
+      padding: 12px;
+      overflow-x: auto;
+      font-family: 'Consolas', 'Menlo', monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: #24292e;
+      margin-top: 8px;
+    }
+
+    .sub-title {
+      margin-top: 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    .sub-title:first-of-type { margin-top: 0; }
+
+    .api-desc {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+      margin-top: 4px;
+    }
+
+    .method {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .method.get { background: #2e7d32; }
+    .method.post { background: #ef6c00; }
+
+    code {
+      font-family: 'Consolas', 'Menlo', monospace;
+      font-size: 12.5px;
+      color: #333;
     }
   </style>
 </head>
 <body>
   <div class="container">
+    <div class="top-bar">
+      <select class="lang-select" id="langSelect" aria-label="Language"></select>
+    </div>
+
     <h1>AutoPrint</h1>
-    <p class="subtitle">PDF 파일을 업로드하면 즉시 인쇄됩니다</p>
+    <p class="subtitle" data-i18n="web.subtitle"></p>
 
     <div class="card">
       <form id="printForm">
         <div class="upload-zone" id="uploadZone">
           <div class="upload-icon">📄</div>
-          <div class="upload-text">클릭하거나 PDF 파일을 여기에 드래그하세요</div>
+          <div class="upload-text" data-i18n="web.dropHint"></div>
           <div class="file-name" id="fileName"></div>
         </div>
         <input type="file" id="fileInput" accept=".pdf,application/pdf">
 
         <div class="options-section">
-          <div class="options-header">
-            <span class="options-label">인쇄 옵션 (JSON, 선택사항)</span>
-            <button type="button" class="options-toggle" id="optionsToggle">도움말 보기</button>
-          </div>
-          <textarea class="options-input" id="optionsInput">{"printer": "HP Laser 1003-1008"}</textarea>
-          <div class="options-hint" id="optionsHint" style="display: none;">
-            로딩 중...
-          </div>
+          <label class="options-label" for="optionsInput" data-i18n="web.optionsLabel"></label>
+          <textarea class="options-input" id="optionsInput"></textarea>
         </div>
 
-        <button type="submit" class="print-btn" id="printBtn" disabled>인쇄</button>
+        <button type="submit" class="print-btn" id="printBtn" disabled data-i18n="web.print"></button>
       </form>
 
       <div id="message" class="message" style="display: none;"></div>
     </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="web.printers"></div>
+      <div id="printerList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="web.options"></div>
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="web.optionName"></th>
+            <th data-i18n="web.optionValues"></th>
+            <th data-i18n="web.optionDesc"></th>
+          </tr>
+        </thead>
+        <tbody id="optionTable"></tbody>
+      </table>
+
+      <div class="sub-title" style="margin-top:18px;" data-i18n="web.sample"></div>
+      <pre id="optionSample"></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="web.api"></div>
+      <div id="apiDocs"></div>
+    </div>
   </div>
 
   <script>
-    var selectedFile = null;
-    var printerInfo = {};
+    var state = {
+      file: null,
+      lang: 'ko',
+      messages: {},
+      printers: [],
+      details: [],
+      defaultPrinter: '',
+      defaultOptions: {},
+      origin: window.location.origin
+    };
+
+    var LANG_KEY = 'autoprint.language';
 
     var uploadZone = document.getElementById('uploadZone');
     var fileInput = document.getElementById('fileInput');
@@ -239,138 +403,393 @@
     var printForm = document.getElementById('printForm');
     var message = document.getElementById('message');
     var optionsInput = document.getElementById('optionsInput');
-    var optionsToggle = document.getElementById('optionsToggle');
-    var optionsHint = document.getElementById('optionsHint');
+    var langSelect = document.getElementById('langSelect');
 
-    // 페이지 로드 시 프린터 및 옵션 정보 가져오기
-    async function loadInfo() {
+    /* ----------------------------------------------------------- 다국어 */
+
+    function t(key, params) {
+      var table = state.messages[state.lang] || {};
+      var text = table[key];
+      if (text === undefined) text = (state.messages.ko || {})[key];
+      if (text === undefined) return key;
+      if (!params) return text;
+
+      return text.replace(/\{(\w+)\}/g, function (match, name) {
+        return params[name] === undefined || params[name] === null ? match : String(params[name]);
+      });
+    }
+
+    function normalizeLang(value) {
+      var lower = String(value || '').toLowerCase();
+      if (lower.indexOf('zh') === 0) return 'zh';
+      if (lower.indexOf('ko') === 0) return 'ko';
+      return 'ko';
+    }
+
+    function readStoredLang() {
+      try { return localStorage.getItem(LANG_KEY); } catch (e) { return null; }
+    }
+
+    function storeLang(value) {
+      try { localStorage.setItem(LANG_KEY, value); } catch (e) { /* noop */ }
+    }
+
+    function applyLanguage() {
+      document.documentElement.lang = state.lang === 'zh' ? 'zh-CN' : 'ko';
+
+      var nodes = document.querySelectorAll('[data-i18n]');
+      for (var i = 0; i < nodes.length; i++) {
+        nodes[i].textContent = t(nodes[i].getAttribute('data-i18n'));
+      }
+
+      optionsInput.placeholder = t('web.optionsPlaceholder');
+
+      renderPrinters();
+      renderOptionTable();
+      renderApiDocs();
+    }
+
+    /* ------------------------------------------------------- 정보 불러오기 */
+
+    async function loadAll() {
       try {
+        var i18nRes = await fetch('/api/i18n');
+        var i18nData = await i18nRes.json();
+        state.messages = i18nData.messages || {};
+
+        var langs = i18nData.languages || [{ code: 'ko', label: '한국어' }];
+        langSelect.innerHTML = '';
+        langs.forEach(function (lang) {
+          var option = document.createElement('option');
+          option.value = lang.code;
+          option.textContent = lang.label;
+          langSelect.appendChild(option);
+        });
+
+        state.lang = normalizeLang(readStoredLang() || navigator.language);
+        langSelect.value = state.lang;
+
         var printerRes = await fetch('/api/printers');
-        printerInfo = await printerRes.json();
+        var printerData = await printerRes.json();
+        state.printers = printerData.printers || [];
+        state.details = printerData.details || [];
+        state.defaultPrinter = printerData.defaultPrinter || '';
 
         var optionsRes = await fetch('/api/options');
         var optionsData = await optionsRes.json();
+        state.defaultOptions = optionsData.options || {};
 
-        updateHint(printerInfo, optionsData.options);
+        applyLanguage();
       } catch (e) {
         console.error('Failed to load info:', e);
-        optionsHint.textContent = '정보를 불러오지 못했습니다';
+        document.getElementById('printerList').textContent = t('web.loadFailed');
       }
     }
 
-    function updateHint(printerData, defaultOptions) {
-      var printers = printerData.printers || [];
-      var defaultPrinter = printerData.defaultPrinter || '';
+    /* -------------------------------------------------------- 프린터 목록 */
 
-      var hintHtml = '<strong>사용 가능한 프린터:</strong><br>';
-      if (printers.length > 0) {
-        printers.forEach(function(p) {
-          var isDefault = (p === defaultPrinter);
-          hintHtml += (isDefault ? '  * ' : '    ') + p + (isDefault ? ' (기본)' : '') + '<br>';
-        });
-      } else {
-        hintHtml += '  없음<br>';
-      }
+    function renderPrinters() {
+      var list = document.getElementById('printerList');
+      list.innerHTML = '';
 
-      hintHtml += '<br><strong>기본 옵션:</strong><pre>' + JSON.stringify(defaultOptions, null, 2) + '</pre>';
-      hintHtml += '<br><strong>예시:</strong><pre>{"printer": "' + (defaultPrinter || '프린터명') + '", "copies": 2}</pre>';
-
-      optionsHint.innerHTML = hintHtml;
-    }
-
-    optionsToggle.addEventListener('click', function() {
-      if (optionsHint.style.display === 'none') {
-        optionsHint.style.display = 'block';
-        optionsToggle.textContent = '도움말 숨기기';
-      } else {
-        optionsHint.style.display = 'none';
-        optionsToggle.textContent = '도움말 보기';
-      }
-    });
-
-    uploadZone.addEventListener('click', function() { fileInput.click(); });
-
-    uploadZone.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      uploadZone.classList.add('dragover');
-    });
-
-    uploadZone.addEventListener('dragleave', function() {
-      uploadZone.classList.remove('dragover');
-    });
-
-    uploadZone.addEventListener('drop', function(e) {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-
-      var files = e.dataTransfer.files;
-      if (files.length > 0) {
-        handleFile(files[0]);
-      }
-    });
-
-    fileInput.addEventListener('change', function(e) {
-      if (e.target.files.length > 0) {
-        handleFile(e.target.files[0]);
-      }
-    });
-
-    function handleFile(file) {
-      if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
-        showMessage('PDF 파일만 지원합니다', 'error');
+      if (state.details.length === 0) {
+        var empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = t('web.printersEmpty');
+        list.appendChild(empty);
         return;
       }
 
-      selectedFile = file;
+      state.details.forEach(function (printer) {
+        var item = document.createElement('div');
+        item.className = 'printer-item';
+
+        var info = document.createElement('div');
+        info.className = 'printer-info';
+
+        var name = document.createElement('div');
+        name.className = 'printer-name';
+        // textContent로 넣어야 프린터 이름에 <, & 가 있어도 그대로 보인다.
+        name.textContent = printer.name;
+
+        if (printer.name === state.defaultPrinter) {
+          var badge = document.createElement('span');
+          badge.className = 'printer-badge';
+          badge.textContent = t('web.printerDefault');
+          name.appendChild(badge);
+        }
+
+        // 저장 위치를 묻는 가상 프린터는 서비스에서 인쇄가 끝나지 않는다.
+        if (printer.usable === false) {
+          item.className = 'printer-item blocked';
+          var blocked = document.createElement('span');
+          blocked.className = 'printer-badge blocked';
+          blocked.textContent = t('web.printerUnusable');
+          name.appendChild(blocked);
+        }
+
+        info.appendChild(name);
+
+        if (printer.paperSizes && printer.paperSizes.length > 0) {
+          var papers = document.createElement('div');
+          papers.className = 'printer-papers';
+          papers.textContent = t('web.paperSizes') + ': ' + printer.paperSizes.join(', ');
+          info.appendChild(papers);
+        }
+
+        if (printer.usable === false) {
+          var note = document.createElement('div');
+          note.className = 'printer-note';
+          note.textContent = t('web.printerUnusableHint');
+          info.appendChild(note);
+        }
+
+        var useBtn = document.createElement('button');
+        useBtn.type = 'button';
+        useBtn.className = 'use-btn';
+        useBtn.textContent = t('web.printerUse');
+        useBtn.disabled = printer.usable === false;
+        useBtn.addEventListener('click', function () {
+          usePrinter(printer.name);
+        });
+
+        item.appendChild(info);
+        item.appendChild(useBtn);
+        list.appendChild(item);
+      });
+    }
+
+    /** 목록에서 고른 프린터를 옵션 칸에 반영한다. 기존 옵션은 지우지 않는다. */
+    function usePrinter(name) {
+      var current = {};
+      var text = optionsInput.value.trim();
+
+      if (text) {
+        try { current = JSON.parse(text); } catch (e) { current = {}; }
+      }
+
+      current.printer = name;
+      optionsInput.value = JSON.stringify(current, null, 2);
+    }
+
+    /* ---------------------------------------------------------- 옵션 설명 */
+
+    function optionRows() {
+      return [
+        { name: 'printer', values: '"HP LaserJet"', desc: t('opt.printer') },
+        { name: 'copies', values: '1, 2, 3 …', desc: t('opt.copies') },
+        { name: 'paperSize', values: '"A4", "Letter" …', desc: t('opt.paperSize') },
+        { name: 'orientation', values: '"portrait", "landscape"', desc: t('opt.orientation') },
+        { name: 'color', values: '"color", "monochrome"', desc: t('opt.color') },
+        {
+          name: 'sides',
+          values: '"one-sided", "two-sided-long", "two-sided-short"',
+          desc: t('opt.sides')
+        },
+        { name: 'pages', values: '"1-3", "2", "1-3,7"', desc: t('opt.pages') },
+        { name: 'scale', values: '"noscale", "shrink", "fit"', desc: t('opt.scale') }
+      ];
+    }
+
+    function renderOptionTable() {
+      var body = document.getElementById('optionTable');
+      body.innerHTML = '';
+
+      optionRows().forEach(function (row) {
+        var tr = document.createElement('tr');
+
+        var name = document.createElement('td');
+        name.className = 'opt-name';
+        name.textContent = row.name;
+
+        var values = document.createElement('td');
+        values.className = 'opt-values';
+        values.textContent = row.values;
+
+        var desc = document.createElement('td');
+        desc.textContent = row.desc;
+
+        tr.appendChild(name);
+        tr.appendChild(values);
+        tr.appendChild(desc);
+        body.appendChild(tr);
+      });
+
+      var sample = {
+        printer: state.defaultPrinter || 'HP LaserJet',
+        copies: 2,
+        paperSize: state.defaultOptions.paperSize || 'A4',
+        orientation: 'portrait',
+        color: 'monochrome',
+        sides: 'two-sided-long'
+      };
+
+      document.getElementById('optionSample').textContent = JSON.stringify(sample, null, 2);
+    }
+
+    /* --------------------------------------------------------- API 사용법 */
+
+    function renderApiDocs() {
+      var container = document.getElementById('apiDocs');
+      container.innerHTML = '';
+
+      var base = state.origin;
+
+      var docs = [
+        {
+          method: 'POST',
+          path: '/api/print',
+          desc: t('web.apiPrintDesc'),
+          sample:
+            'curl -X POST ' + base + '/api/print \\\n' +
+            '  -F "file=@document.pdf" \\\n' +
+            '  -F \'options={"printer":"' + (state.defaultPrinter || 'HP LaserJet') + '","copies":2}\'',
+          response: '{\n  "success": true,\n  "file": "document.pdf",\n  "printer": "' +
+            (state.defaultPrinter || 'HP LaserJet') + '"\n}'
+        },
+        {
+          method: 'GET',
+          path: '/api/printers',
+          desc: t('web.apiPrintersDesc'),
+          sample: 'curl ' + base + '/api/printers',
+          response: '{\n  "printers": ["HP LaserJet"],\n  "defaultPrinter": "HP LaserJet",\n' +
+            '  "details": [{ "name": "HP LaserJet", "paperSizes": ["A4"] }]\n}'
+        },
+        {
+          method: 'GET',
+          path: '/api/options',
+          desc: t('web.apiOptionsDesc'),
+          sample: 'curl ' + base + '/api/options',
+          response: '{\n  "options": ' + JSON.stringify(state.defaultOptions) + '\n}'
+        },
+        {
+          method: 'GET',
+          path: '/api/info',
+          desc: t('web.apiInfoDesc'),
+          sample: 'curl ' + base + '/api/info',
+          response: '{\n  "ips": [{ "interface": "Ethernet", "ip": "192.168.0.10" }],\n' +
+            '  "port": ' + (window.location.port || 80) + ',\n  "urls": ["' + base + '"]\n}'
+        }
+      ];
+
+      docs.forEach(function (doc) {
+        var title = document.createElement('div');
+        title.className = 'sub-title';
+
+        var badge = document.createElement('span');
+        badge.className = 'method ' + doc.method.toLowerCase();
+        badge.textContent = doc.method;
+
+        var pathCode = document.createElement('code');
+        pathCode.textContent = doc.path;
+
+        title.appendChild(badge);
+        title.appendChild(pathCode);
+
+        var desc = document.createElement('div');
+        desc.className = 'api-desc';
+        desc.textContent = doc.desc;
+
+        var sample = document.createElement('pre');
+        sample.textContent = doc.sample;
+
+        var responseLabel = document.createElement('div');
+        responseLabel.className = 'api-desc';
+        responseLabel.style.marginTop = '8px';
+        responseLabel.textContent = t('web.apiResponse');
+
+        var response = document.createElement('pre');
+        response.textContent = doc.response;
+
+        container.appendChild(title);
+        container.appendChild(desc);
+        container.appendChild(sample);
+        container.appendChild(responseLabel);
+        container.appendChild(response);
+      });
+    }
+
+    /* ------------------------------------------------------------- 인쇄 */
+
+    function handleFile(file) {
+      if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+        showMessage(t('web.onlyPdf'), 'error');
+        return;
+      }
+
+      state.file = file;
       fileName.textContent = file.name;
       uploadZone.classList.add('has-file');
       printBtn.disabled = false;
       hideMessage();
     }
 
-    printForm.addEventListener('submit', async function(e) {
+    uploadZone.addEventListener('click', function () { fileInput.click(); });
+
+    uploadZone.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', function () {
+      uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+    });
+
+    fileInput.addEventListener('change', function (e) {
+      if (e.target.files.length > 0) handleFile(e.target.files[0]);
+    });
+
+    langSelect.addEventListener('change', function () {
+      state.lang = normalizeLang(langSelect.value);
+      storeLang(state.lang);
+      applyLanguage();
+    });
+
+    printForm.addEventListener('submit', async function (e) {
       e.preventDefault();
 
-      if (!selectedFile) {
-        showMessage('파일을 선택해주세요', 'error');
+      if (!state.file) {
+        showMessage(t('web.selectFile'), 'error');
         return;
       }
 
       var formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append('file', state.file);
 
       var optionsText = optionsInput.value.trim();
       if (optionsText) {
         try {
           JSON.parse(optionsText);
           formData.append('options', optionsText);
-        } catch (e) {
-          showMessage('옵션 JSON 형식이 올바르지 않습니다', 'error');
+        } catch (err) {
+          showMessage(t('web.invalidJson'), 'error');
           return;
         }
       }
 
       printBtn.disabled = true;
-      printBtn.textContent = '인쇄 중...';
+      printBtn.textContent = t('web.printing');
 
       try {
-        var response = await fetch('/api/print', {
-          method: 'POST',
-          body: formData
-        });
-
+        var response = await fetch('/api/print', { method: 'POST', body: formData });
         var result = await response.json();
 
         if (response.ok) {
-          showMessage('인쇄 요청이 완료되었습니다', 'success');
+          showMessage(t('web.printQueued') + (result.printer ? '\n' + result.printer : ''), 'success');
         } else {
-          showMessage(result.error || '인쇄 실패', 'error');
+          showMessage(result.error || t('web.printFailed'), 'error');
         }
       } catch (error) {
-        showMessage('연결 오류: ' + error.message, 'error');
+        showMessage(t('web.connectionError', { error: error.message }), 'error');
       } finally {
         printBtn.disabled = false;
-        printBtn.textContent = '인쇄';
+        printBtn.textContent = t('web.print');
       }
     });
 
@@ -384,8 +803,7 @@
       message.style.display = 'none';
     }
 
-    // 초기화
-    loadInfo();
+    loadAll();
   </script>
 </body>
 </html>
